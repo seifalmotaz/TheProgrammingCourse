@@ -83,6 +83,25 @@ The Dart VM provides the environment in which your compiled code runs. It enable
   - Event queue and microtask queue
   - How `async`/`await` works under the hood
 
+
+Mini-diagram: Dart VM Architecture
+
+```mermaid
+flowchart TB
+  Src["Dart code"]
+  JIT["JIT - dev"]
+  AOT["AOT - release"]
+  VM["Dart VM runtime"]
+  Native["Native executable"]
+  ISO1["Isolate 1 - heap and event loop"]
+  ISO2["Isolate 2 - heap and event loop"]
+  Src --> JIT --> VM
+  Src --> AOT --> Native
+  VM --> ISO1
+  VM --> ISO2
+  ISO1 <-- "messages" --> ISO2
+```
+
 Mini-diagram: Event loop in an isolate
 
 ```mermaid
