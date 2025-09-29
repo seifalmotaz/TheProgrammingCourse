@@ -87,11 +87,11 @@ Mini-diagram: Event loop in an isolate
 
 ```mermaid
 flowchart TD
-  Start[Task scheduled] --> Microtasks{Microtask queue empty?}
-  Microtasks -- No --> RunMicrotask[Run next microtask] --> Microtasks
-  Microtasks -- Yes --> Events{Event queue empty?}
-  Events -- No --> RunEvent[Run next event (I/O, timer, message)] --> Microtasks
-  Events -- Yes --> Idle[Idle / wait for work]
+  Start["Task scheduled"] --> MicroQ{"Microtask queue empty?"}
+  MicroQ -- "No" --> RunMicro["Run next microtask"] --> MicroQ
+  MicroQ -- "Yes" --> EventQ{"Event queue empty?"}
+  EventQ -- "No" --> RunEvent["Run next event - IO timer message"] --> MicroQ
+  EventQ -- "Yes" --> Idle["Idle or wait for work"]
 ```
 
 ### Examples — Section 2
@@ -142,15 +142,15 @@ Mini-diagram: Stack vs Heap
 
 ```mermaid
 flowchart LR
-  subgraph Stack[Stack (per call)]
-    Frame[Function frames + local refs]
+  subgraph Stack["Stack per call"]
+    Frame["Function frames and local refs"]
   end
-  subgraph Heap[Heap (objects)]
-    S[(String 'Ava')]
-    L[(List [1,2,3])]
+  subgraph Heap["Heap objects"]
+    S["String: Ava"]
+    L["List: 1,2,3"]
   end
-  Frame -- ref --> S
-  Frame -- ref --> L
+  Frame --> S
+  Frame --> L
 ```
 
 ### Examples — Section 3
