@@ -102,16 +102,9 @@ flowchart TB
   ISO1 <-- "messages" --> ISO2
 ```
 
-Mini-diagram: Event loop in an isolate
+See the event loop diagram in Section 5 (Execution Model) for a visual of microtasks and events.
 
-```mermaid
-flowchart TD
-  Start["Task scheduled"] --> MicroQ{"Microtask queue empty?"}
-  MicroQ -- "No" --> RunMicro["Run next microtask"] --> MicroQ
-  MicroQ -- "Yes" --> EventQ{"Event queue empty?"}
-  EventQ -- "No" --> RunEvent["Run next event - IO timer message"] --> MicroQ
-  EventQ -- "Yes" --> Idle["Idle or wait for work"]
-```
+
 
 ### Examples — Section 2
 
@@ -251,6 +244,19 @@ This section ties together the VM’s event loop (Section 2) and your program’
 
 - **`main()` as entry point**
   Entry is `void main()` or `Future<void> main()`. CLI apps can accept `List<String> args`. Flutter apps typically call `runApp()` from `main()`.
+
+This diagram complements the overview from Section 2 (Dart VM Architecture).
+
+Mini-diagram: Event loop in an isolate
+
+```mermaid
+flowchart TD
+  Start["Task scheduled"] --> MicroQ{"Microtask queue empty?"}
+  MicroQ -- "No" --> RunMicro["Run next microtask"] --> MicroQ
+  MicroQ -- "Yes" --> EventQ{"Event queue empty?"}
+  EventQ -- "No" --> RunEvent["Run next event - IO timer message"] --> MicroQ
+  EventQ -- "Yes" --> Idle["Idle or wait for work"]
+```
 
 ### Examples — Section 5
 
