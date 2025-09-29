@@ -4,16 +4,31 @@
 This guide builds from the ground up: types and how Dart compiles, to the VM and concurrency model, memory management, the type system, how your code executes, and performance. Each section connects to the next so you can see how the pieces fit together.
 
 What you will learn:
-- The essentials of Dart’s type system and compilation (Section 1)
-- The VM that runs Dart and its concurrency model (Section 2)
-- How memory works and is cleaned up (Section 3)
-- How Dart’s type system shapes APIs and safety (Section 4)
-- How execution flows and async works (Section 5)
-- Why Dart is fast and how builds get smaller (Section 6)
+ - The essentials of Dart’s type system and compilation (Section 1)
+ - The VM that runs Dart and its concurrency model (Section 2)
+ - How memory works and is cleaned up (Section 3)
+ - How Dart’s type system shapes APIs and safety (Section 4)
+ - How execution flows and async works (Section 5)
+ - Why Dart is fast and how builds get smaller (Section 6)
 
 How to use this guide:
-- Read in order; later sections assume earlier ones.
-- Use cross‑references to revisit concepts quickly.
+ - Read in order; later sections assume earlier ones.
+ - Use cross‑references to revisit concepts quickly.
+
+## Glossary
+
+- **Dart VM**: The runtime that executes Dart code, offering JIT during development and hosting isolates.
+- **Isolate**: A lightweight, independent worker with its own memory heap and event loop. No shared mutable memory.
+- **Event loop**: The scheduler inside an isolate that runs microtasks first, then events (I/O, timers).
+- **Microtask queue**: High-priority tasks scheduled by futures; drained before the next event.
+- **Stack**: Fast, ordered memory for function calls and local references; unwinds automatically when functions return.
+- **Heap**: Larger memory area for objects (lists, maps, class instances); reclaimed by the garbage collector.
+- **JIT (Just-in-Time)**: Compiles code while running; great for hot reload in development.
+- **AOT (Ahead-of-Time)**: Compiles code before running; used in release builds for fast startup and steady performance.
+- **GC (Garbage Collection)**: Automatic memory cleanup that removes objects no longer in use.
+- **Tree shaking**: Removing unused code to shrink the final build.
+- **Reified generics**: Generic type information is available at runtime (e.g., `list is List<int>` works).
+- **Null safety**: Non-nullable types by default; `T?` allows null.
 
 ## 1. Dart Language Type & Compilation
 
@@ -28,7 +43,12 @@ How to use this guide:
    - AOT (release): compiles to native machine code, fast startup, predictable performance, smaller runtime footprint, better code optimization.
 
  - **Compilation targets: native and JavaScript**
-  Dart can compile to native machine code (CLI, server, Flutter releases) and to JavaScript for the web. Tooling includes `dart compile exe/aot-snapshot` for native and `dart compile js` (via dart2js) and DDC for web dev builds.
+Dart can compile to native machine code (CLI, server, Flutter releases) and to JavaScript for the web. Tooling includes `dart compile exe/aot-snapshot` for native and `dart compile js` (via dart2js) and DDC for web dev builds.
+
+### Checkpoint — Section 1
+- Identify which build uses JIT vs AOT and why.
+- Make `int?` vs `int` decisions: when should a value be nullable?
+- Spot whether `var x = 10;` is statically typed and what type it infers.
 
 With a basic grasp of types and how Dart turns your code into machine code (JIT for development, AOT for release), the next step is to understand the runtime that executes it: the Dart VM (Section 2). For deeper type topics like generics and top types, see Section 4.
 
@@ -47,6 +67,22 @@ The Dart VM provides the environment in which your compiled code runs. It enable
   - Event queue and microtask queue
   - How `async`/`await` works under the hood
 
+Mini-diagram: Event loop in an isolate
+
+```mermaid
+flowchart TD
+  Start[Task scheduled] --> Microtasks{Microtask queue empty?}
+  Microtasks -- No --> RunMicrotask[Run next microtask] --> Microtasks
+  Microtasks -- Yes --> Events{Event queue empty?}
+  Events -- No --> RunEvent[Run next event (I/O, timer, message)] --> Microtasks
+  Events -- Yes --> Idle[Idle / wait for work]
+```
+
+### Checkpoint — Section 2
+- What is an isolate, and how is it different from a thread?
+- Which queue runs first: microtasks or events?
+- How does `await` interact with the event loop?
+
 Before we look at how programs run step-by-step (Section 5), we need to understand how memory is organized and managed.
  
 ## 3. Memory Management
@@ -61,6 +97,26 @@ Inside each isolate, memory is organized into a stack and a heap. This section e
 
 - **Stack vs heap**
   Local variables and call frames live on the stack; objects (instances, closures, lists, maps) are allocated on the heap. The GC manages the heap; the stack is unwound automatically on return.
+
+Mini-diagram: Stack vs Heap
+
+```mermaid
+flowchart LR
+  subgraph Stack[Stack (per call)]
+    Frame[Function frames + local refs]
+  end
+  subgraph Heap[Heap (objects)]
+    S[(String 'Ava')]
+    L[(List [1,2,3])]
+  end
+  Frame -- ref --> S
+  Frame -- ref --> L
+```
+
+### Checkpoint — Section 3
+- Where do objects live vs local references?
+- Why does a generational GC often check young objects more frequently?
+- Name one thing you can do to help GC: avoid keeping unused references.
 
 Next, we’ll deepen the type concepts from Section 1 to see how they enable safety and optimization.
 
@@ -79,6 +135,11 @@ Building on Section 1, here we go deeper into strong typing and generics. These 
   - `Object`: top non-nullable type. Value cannot be null; only `Object` members are available without casts.
   - `Object?`: top type including `null`. Use when a value may be null; you must handle nullability before using non-`Object` members.
 
+### Checkpoint — Section 4
+- When would you choose `dynamic` deliberately?
+- What does “reified generics” allow at runtime?
+- Difference between `Object` and `Object?` in practice?
+
 With types and memory in place, let’s see how a Dart program actually runs and how async fits in.
 
 ## 5. Execution Model
@@ -91,6 +152,11 @@ This section ties together the VM’s event loop (Section 2) and your program’
 - **`main()` as entry point**
   Entry is `void main()` or `Future<void> main()`. CLI apps can accept `List<String> args`. Flutter apps typically call `runApp()` from `main()`.
 
+### Checkpoint — Section 5
+- Which runs first: microtasks or events?
+- What are two valid signatures for `main()`?
+- What conditions cause a CLI Dart process to exit?
+
 ## 6. Performance Characteristics
 
 Performance in Dart emerges from choices across compilation (Section 1), runtime/isolates (Section 2), memory (Section 3), and types (Section 4).
@@ -100,6 +166,11 @@ Performance in Dart emerges from choices across compilation (Section 1), runtime
  
  - **Tree shaking and code elimination**
    The compiler removes unreachable code and unused symbols (Dart and transitive dependencies). Flutter/release and dart2js builds apply aggressive tree-shaking to shrink binaries and improve load time.
+
+### Checkpoint — Section 6
+- Why does AOT help startup time?
+- What is tree shaking and why does it reduce bundle size?
+- Name one factor from earlier sections that also affects performance.
 
 ## Appendix A: Beginner-Friendly Recap (Optional)
 
