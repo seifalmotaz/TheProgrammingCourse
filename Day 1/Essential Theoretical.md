@@ -45,6 +45,22 @@ How to use this guide:
  - **Compilation targets: native and JavaScript**
 Dart can compile to native machine code (CLI, server, Flutter releases) and to JavaScript for the web. Tooling includes `dart compile exe/aot-snapshot` for native and `dart compile js` (via dart2js) and DDC for web dev builds.
 
+### Examples — Section 1
+
+```dart
+// Type inference and explicit typing
+var count = 0;        // inferred as int
+final pi = 3.14;      // inferred as double
+String name = 'Ava';  // explicit type
+
+// Null safety basics
+int? maybe;
+int sure = maybe ?? 42;   // use default if null
+
+int? nullable = 5;
+int forced = nullable!;   // unsafe if null; throws at runtime if null
+```
+
 ### Checkpoint — Section 1
 - Identify which build uses JIT vs AOT and why.
 - Make `int?` vs `int` decisions: when should a value be nullable?
@@ -76,6 +92,30 @@ flowchart TD
   Microtasks -- Yes --> Events{Event queue empty?}
   Events -- No --> RunEvent[Run next event (I/O, timer, message)] --> Microtasks
   Events -- Yes --> Idle[Idle / wait for work]
+```
+
+### Examples — Section 2
+
+```dart
+import 'dart:async';
+
+void main() {
+  print('start');
+
+  scheduleMicrotask(() => print('microtask 1'));
+  Future(() => print('event 1 (future)'));
+  Future.microtask(() => print('microtask 2'));
+  Future.delayed(Duration.zero, () => print('event 2 (delayed zero)'));
+
+  print('end');
+}
+// Expected order:
+// start
+// end
+// microtask 1
+// microtask 2
+// event 1 (future)
+// event 2 (delayed zero)
 ```
 
 ### Checkpoint — Section 2
@@ -113,6 +153,24 @@ flowchart LR
   Frame -- ref --> L
 ```
 
+### Examples — Section 3
+
+```dart
+class User {
+  final String name;
+  User(this.name);
+}
+
+void main() {
+  var u = User('Ava'); // allocated on the heap
+  print(u.name);
+
+  // Reassigning drops the old reference; if nothing else points to it,
+  // it's eligible for garbage collection.
+  u = User('Ben');
+}
+```
+
 ### Checkpoint — Section 3
 - Where do objects live vs local references?
 - Why does a generational GC often check young objects more frequently?
@@ -135,6 +193,29 @@ Building on Section 1, here we go deeper into strong typing and generics. These 
   - `Object`: top non-nullable type. Value cannot be null; only `Object` members are available without casts.
   - `Object?`: top type including `null`. Use when a value may be null; you must handle nullability before using non-`Object` members.
 
+### Examples — Section 4
+
+```dart
+// Generic function with type inference
+T first<T>(List<T> items) => items.first;
+
+void main() {
+  final n = first<int>([1, 2, 3]); // n is int
+  final s = first(['a', 'b']);     // T is inferred as String
+}
+```
+
+```dart
+// dynamic vs Object
+void takesObject(Object value) {
+  // value.toUpperCase(); // compile-time error: Object doesn't define it
+}
+
+void takesDynamic(dynamic value) {
+  value.toUpperCase(); // compiles; may throw at runtime if not a String
+}
+```
+
 ### Checkpoint — Section 4
 - When would you choose `dynamic` deliberately?
 - What does “reified generics” allow at runtime?
@@ -152,6 +233,17 @@ This section ties together the VM’s event loop (Section 2) and your program’
 - **`main()` as entry point**
   Entry is `void main()` or `Future<void> main()`. CLI apps can accept `List<String> args`. Flutter apps typically call `runApp()` from `main()`.
 
+### Examples — Section 5
+
+```dart
+Future<void> main() async {
+  print('A');
+  await Future(() => print('B')); // scheduled on the event queue
+  print('C');
+}
+// Output: A, B, C
+```
+
 ### Checkpoint — Section 5
 - Which runs first: microtasks or events?
 - What are two valid signatures for `main()`?
@@ -166,6 +258,16 @@ Performance in Dart emerges from choices across compilation (Section 1), runtime
  
  - **Tree shaking and code elimination**
    The compiler removes unreachable code and unused symbols (Dart and transitive dependencies). Flutter/release and dart2js builds apply aggressive tree-shaking to shrink binaries and improve load time.
+
+### Examples — Section 6
+
+```dart
+// Unused code can be removed by tree shaking in release builds:
+String _unused() => 'I may be removed if never referenced';
+
+// Const values can be precomputed and canonicalized:
+const answer = 42;
+```
 
 ### Checkpoint — Section 6
 - Why does AOT help startup time?
