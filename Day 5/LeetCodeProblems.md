@@ -8,8 +8,8 @@
 - **Return:** A list of two indices `[i, j]` (order doesn’t matter).
 - **Examples:**
 
-  - `nums = [2,7,11,15], target = 9 → [7,2]`
-  - `nums = [3,2,4], target = 6 → [3,2]`
+  - `nums = [2,7,11,15], target = 9 → [0,1]`
+  - `nums = [3,2,4], target = 6 → [1,2]`
 
 - **Hint:** Use a `Map<int,int>` to store _value → index_ while you iterate once.
 - **Target Complexity:** Time `O(n)`, Space `O(n)`.
